@@ -8,8 +8,40 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <unistd.h>
+#include <limits.h>
 
 namespace ui {
+
+std::string GetExecutablePath() {
+    char path[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count == -1) {
+        return "";
+    }
+    return std::string(path, count);
+}
+
+std::string GetPluginsDirectory() {
+    std::string exePath = GetExecutablePath();
+    if (exePath.empty()) {
+        return "plugins";
+    }
+    
+    std::filesystem::path exeDir = std::filesystem::path(exePath).parent_path();
+    std::filesystem::path projectPlugins = exeDir.parent_path() / "plugins";
+    
+    if (std::filesystem::exists(projectPlugins)) {
+        return projectPlugins.string();
+    }
+    
+    std::filesystem::path sameDirPlugins = exeDir / "plugins";
+    if (std::filesystem::exists(sameDirPlugins)) {
+        return sameDirPlugins.string();
+    }
+    
+    return projectPlugins.string();
+}
 
 Application::Application() {
     pluginManager = new cum::Manager();
@@ -90,9 +122,7 @@ void Application::Update(float deltaTime) {
     hui::IdleEvent idleEvent;
     idleEvent.absTime = window->GetTime();
     idleEvent.deltaTime = deltaTime;
-    if (ui->GetRoot()) {
-        ui->GetRoot()->OnIdle(idleEvent);
-    }
+    ui->OnIdle(idleEvent);
 }
 
 void Application::Render() {
@@ -107,7 +137,9 @@ void Application::Render() {
 
 void Application::LoadPlugins() {
     namespace fs = std::filesystem;
-    std::string pluginsDir = "plugins";
+    std::string pluginsDir = GetPluginsDirectory();
+    
+    std::cout << "Looking for plugins in: " << pluginsDir << std::endl;
     
     if (!fs::exists(pluginsDir) || !fs::is_directory(pluginsDir)) {
         std::cerr << "Warning: plugins directory not found. Creating it..." << std::endl;
@@ -121,21 +153,19 @@ void Application::LoadPlugins() {
     
     std::vector<std::string> pluginPaths;
     std::string backendDir = pluginsDir + "/backend";
+    
     if (fs::exists(backendDir) && fs::is_directory(backendDir)) {
         try {
             for (const auto& entry : fs::directory_iterator(backendDir)) {
                 if (entry.is_regular_file()) {
                     std::string path = entry.path().string();
-                    if (path.size() >= 3) {
-                        std::string ext = path.substr(path.size() - 3);
-                        if (ext == ".so" || ext == ".dll") {
-                            pluginPaths.push_back(path);
-                        }
+                    if (path.size() >= 3 && path.substr(path.size() - 3) == ".so") {
+                        pluginPaths.push_back(path);
                     }
                 }
             }
         } catch (const std::exception& e) {
-            std::cerr << "Error reading backend plugins directory: " << e.what() << std::endl;
+            std::cerr << "Error reading backend plugins: " << e.what() << std::endl;
         }
     }
     
@@ -143,14 +173,11 @@ void Application::LoadPlugins() {
         for (const auto& entry : fs::directory_iterator(pluginsDir)) {
             if (entry.is_regular_file()) {
                 std::string path = entry.path().string();
-                if (path.size() >= 3) {
-                    std::string ext = path.substr(path.size() - 3);
-                    if (ext == ".so" || ext == ".dll") {
-                        std::string normalized = path;
-                        std::replace(normalized.begin(), normalized.end(), '\\', '/');
-                        if (normalized.find("/backend/") == std::string::npos) {
-                            pluginPaths.push_back(path);
-                        }
+                if (path.size() >= 3 && path.substr(path.size() - 3) == ".so") {
+                    std::string normalized = path;
+                    std::replace(normalized.begin(), normalized.end(), '\\', '/');
+                    if (normalized.find("/backend/") == std::string::npos) {
+                        pluginPaths.push_back(path);
                     }
                 }
             }
@@ -170,11 +197,10 @@ void Application::LoadPlugins() {
     
     try {
         pluginManager->TriggerAfterLoad();
-        std::cout << "All plugins loaded successfully! (" << pluginPaths.size() << " plugins)" << std::endl;
+        std::cout << "Loaded " << pluginPaths.size() << " plugin(s) successfully" << std::endl;
     } catch (const cum::Manager::DependencyError& e) {
         std::cerr << "Plugin dependency error: " << e.what() << std::endl;
     }
 }
 
 } // namespace ui
-

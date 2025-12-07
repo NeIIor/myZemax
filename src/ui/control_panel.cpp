@@ -1,30 +1,28 @@
 #include "ui/control_panel.hpp"
 #include "dr4/keycodes.hpp"
 #include <algorithm>
+#include "hui/event.hpp"
+#include "hui/ui.hpp"  // Добавляю для GetUI()->GetWindow()
 
 namespace ui {
 
 ControlPanel::ControlPanel(hui::UI* ui, raytracer::Camera* camera_)
-    : Container(ui), camera(camera_), lastTime(0.0f), isCollapsed(false) {
+    : Container(ui), camera(camera_) {
     SetSize(200, 200);
-    SetupButtons();
-}
-
-void ControlPanel::SetupButtons() {
 }
 
 void ControlPanel::Redraw() const {
     dr4::Texture& texture = GetTexture();
     texture.Clear(dr4::Color(50, 50, 50));
     
-    auto* titleText = GetWindow()->CreateText();
+    auto* titleText = GetUI()->GetWindow()->CreateText();
     titleText->SetText("Camera Control");
     titleText->SetPos(dr4::Vec2f(10, 5));
     titleText->SetFontSize(14);
     titleText->SetColor(dr4::Color(255, 255, 255));
     texture.Draw(*titleText);
     
-    auto* arrowText = GetWindow()->CreateText();
+    auto* arrowText = GetUI()->GetWindow()->CreateText();
     arrowText->SetText(isCollapsed ? "▼" : "▶");
     arrowText->SetPos(dr4::Vec2f(GetSize().x - 20, 5));
     arrowText->SetFontSize(14);
@@ -36,7 +34,7 @@ void ControlPanel::Redraw() const {
     float y = 30.0f;
     float lineHeight = 20.0f;
     
-    auto* text = GetWindow()->CreateText();
+    auto* text = GetUI()->GetWindow()->CreateText();
     text->SetFontSize(11);
     text->SetColor(dr4::Color(200, 200, 200));
     
@@ -55,18 +53,22 @@ void ControlPanel::Redraw() const {
     texture.Draw(*text);
 }
 
-EventResult ControlPanel::OnMouseDown(MouseButtonEvent& evt) {
+hui::EventResult ControlPanel::PropagateToChildren(hui::Event& event) {
+    return hui::EventResult::UNHANDLED;
+}
+
+hui::EventResult ControlPanel::OnMouseDown(hui::MouseButtonEvent& evt) {
     if (evt.button == dr4::MouseButtonType::LEFT) {
         if (evt.pos.x > GetSize().x - 30 && evt.pos.y < 25) {
             isCollapsed = !isCollapsed;
             ForceRedraw();
-            return EventResult::HANDLED;
+            return hui::EventResult::HANDLED;
         }
     }
     return Container::OnMouseDown(evt);
 }
 
-EventResult ControlPanel::OnKeyDown(KeyEvent& evt) {
+hui::EventResult ControlPanel::OnKeyDown(hui::KeyEvent& evt) {
     if (!camera) return Container::OnKeyDown(evt);
     
     switch (evt.key) {
@@ -83,10 +85,10 @@ EventResult ControlPanel::OnKeyDown(KeyEvent& evt) {
         default: return Container::OnKeyDown(evt);
     }
     
-    return EventResult::HANDLED;
+    return hui::EventResult::HANDLED;
 }
 
-EventResult ControlPanel::OnKeyUp(KeyEvent& evt) {
+hui::EventResult ControlPanel::OnKeyUp(hui::KeyEvent& evt) {
     if (!camera) return Container::OnKeyUp(evt);
     
     switch (evt.key) {
@@ -103,10 +105,10 @@ EventResult ControlPanel::OnKeyUp(KeyEvent& evt) {
         default: return Container::OnKeyUp(evt);
     }
     
-    return EventResult::HANDLED;
+    return hui::EventResult::HANDLED;
 }
 
-EventResult ControlPanel::OnIdle(IdleEvent& evt) {
+hui::EventResult ControlPanel::OnIdle(hui::IdleEvent& evt) {
     if (!camera) return Container::OnIdle(evt);
     
     float deltaTime = static_cast<float>(evt.deltaTime);
@@ -135,4 +137,3 @@ EventResult ControlPanel::OnIdle(IdleEvent& evt) {
 }
 
 } // namespace ui
-

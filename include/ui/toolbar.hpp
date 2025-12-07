@@ -4,6 +4,10 @@
 #include "hui/container.hpp"
 #include "cum/manager.hpp"
 
+namespace hui {
+    class MouseButtonEvent;
+}
+
 namespace ui {
 
 class Toolbar : public hui::Container {
@@ -14,8 +18,9 @@ public:
     void SetManager(cum::Manager* manager);
 
 protected:
+    hui::EventResult PropagateToChildren(hui::Event& event) override;
     void Redraw() const override;
-    EventResult OnMouseDown(MouseButtonEvent& evt) override;
+    hui::EventResult OnMouseDown(hui::MouseButtonEvent& evt) override;
 
 private:
     cum::Manager* pluginManager;
@@ -27,4 +32,3 @@ private:
 } // namespace ui
 
 #endif // UI_TOOLBAR_HPP
-

@@ -6,11 +6,17 @@
 #include <iomanip>
 #include <algorithm>
 #include "dr4/keycodes.hpp"
+#include "hui/event.hpp"
+#include "hui/ui.hpp"  // Добавляю для GetUI()->GetWindow()
 
 namespace ui {
 
 PropertiesWindow::PropertiesWindow(hui::UI* ui) : Container(ui) {
     SetSize(300, 400);
+}
+
+hui::EventResult PropertiesWindow::PropagateToChildren(hui::Event& event) {
+    return hui::EventResult::UNHANDLED;
 }
 
 void PropertiesWindow::SetObject(raytracer::Object* obj) {
@@ -65,14 +71,14 @@ void PropertiesWindow::Redraw() const {
     dr4::Texture& texture = GetTexture();
     texture.Clear(dr4::Color(60, 60, 60));
     
-    auto* titleText = GetWindow()->CreateText();
+    auto* titleText = GetUI()->GetWindow()->CreateText();
     titleText->SetText("Properties");
     titleText->SetPos(dr4::Vec2f(10, 5));
     titleText->SetFontSize(14);
     titleText->SetColor(dr4::Color(255, 255, 255));
     texture.Draw(*titleText);
     
-    auto* arrowText = GetWindow()->CreateText();
+    auto* arrowText = GetUI()->GetWindow()->CreateText();
     arrowText->SetText(isCollapsed ? "▼" : "▶");
     arrowText->SetPos(dr4::Vec2f(GetSize().x - 20, 5));
     arrowText->SetFontSize(14);
@@ -82,7 +88,7 @@ void PropertiesWindow::Redraw() const {
     if (isCollapsed) return;
     
     if (!currentObject) {
-        auto* text = GetWindow()->CreateText();
+        auto* text = GetUI()->GetWindow()->CreateText();
         text->SetText("No object selected");
         text->SetPos(dr4::Vec2f(10, 10));
         text->SetFontSize(14);
@@ -94,14 +100,14 @@ void PropertiesWindow::Redraw() const {
     float y = 10.0f;
     float lineHeight = 25.0f;
     
-    auto* label = GetWindow()->CreateText();
+    auto* label = GetUI()->GetWindow()->CreateText();
     label->SetText("Name:");
     label->SetPos(dr4::Vec2f(10, y));
     label->SetFontSize(12);
     label->SetColor(dr4::Color(255, 255, 255));
     texture.Draw(*label);
     
-    auto* value = GetWindow()->CreateText();
+    auto* value = GetUI()->GetWindow()->CreateText();
     value->SetText(nameText);
     value->SetPos(dr4::Vec2f(80, y));
     value->SetFontSize(12);
@@ -185,7 +191,7 @@ void PropertiesWindow::Redraw() const {
     texture.Draw(*value);
 }
 
-EventResult PropertiesWindow::OnText(TextEvent& evt) {
+hui::EventResult PropertiesWindow::OnText(hui::TextEvent& evt) {
     if (activeField >= 0 && currentObject) {
         ParseAndApplyChanges();
     }
@@ -286,31 +292,30 @@ raytracer::Object* PropertiesWindow::CloneObject(raytracer::Object* obj) const {
     return nullptr;
 }
 
-EventResult PropertiesWindow::OnKeyDown(KeyEvent& evt) {
+hui::EventResult PropertiesWindow::OnKeyDown(hui::KeyEvent& evt) {
     if (evt.key == dr4::KEYCODE_C && (evt.mods & dr4::KEYMOD_CTRL)) {
         if (currentObject) {
             CopyObject();
         }
-        return EventResult::HANDLED;
+        return hui::EventResult::HANDLED;
     } else if (evt.key == dr4::KEYCODE_V && (evt.mods & dr4::KEYMOD_CTRL)) {
         if (onPasteRequest) {
             onPasteRequest();
         }
-        return EventResult::HANDLED;
+        return hui::EventResult::HANDLED;
     }
     return Container::OnKeyDown(evt);
 }
 
-EventResult PropertiesWindow::OnMouseDown(MouseButtonEvent& evt) {
+hui::EventResult PropertiesWindow::OnMouseDown(hui::MouseButtonEvent& evt) {
     if (evt.button == dr4::MouseButtonType::LEFT) {
         if (evt.pos.x > GetSize().x - 30 && evt.pos.y < 25) {
             isCollapsed = !isCollapsed;
             ForceRedraw();
-            return EventResult::HANDLED;
+            return hui::EventResult::HANDLED;
         }
     }
     return Container::OnMouseDown(evt);
 }
 
 } // namespace ui
-

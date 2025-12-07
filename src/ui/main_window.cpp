@@ -1,10 +1,51 @@
 #include "ui/main_window.hpp"
+
+#include "ui/raytracer_window.hpp"
+#include "ui/control_panel.hpp"
+#include "ui/objects_panel.hpp"
+#include "ui/toolbar.hpp"
 #include "ui/properties_window.hpp"
 #include "raytracer/raytracer.hpp"
 
 namespace ui {
 
-MainWindow::MainWindow(hui::UI* ui) : Container(ui) {
+MainWindow::MainWindow(hui::UI* ui) : Container(ui),
+    raytracerWindow(nullptr),
+    controlPanel(nullptr),
+    objectsPanel(nullptr),
+    propertiesWindow(nullptr),
+    toolbar(nullptr) {
+}
+
+MainWindow::~MainWindow() {
+    for (auto* child : children) {
+        UnbecomeParentOf(child);
+    }
+}
+
+void MainWindow::AddChild(hui::Widget* child) {
+    if (child) {
+        BecomeParentOf(child);
+        children.push_back(child);
+    }
+}
+
+PropertiesWindow* MainWindow::GetPropertiesWindow() {
+    return propertiesWindow;
+}
+
+hui::EventResult MainWindow::PropagateToChildren(hui::Event& event) {
+    hui::EventResult result = hui::EventResult::UNHANDLED;
+    
+    for (auto* child : children) {
+        if (child) {
+            if (event.Apply(*child) == hui::EventResult::HANDLED) {
+                result = hui::EventResult::HANDLED;
+            }
+        }
+    }
+    
+    return result;
 }
 
 void MainWindow::SetupLayout(raytracer::Scene* scene, raytracer::Camera* camera, raytracer::RayTracer* rt) {
@@ -31,11 +72,11 @@ void MainWindow::SetupLayout(raytracer::Scene* scene, raytracer::Camera* camera,
     propertiesWindow->SetPos(0, GetSize().y - 300);
     propertiesWindow->SetSize(200, 300);
     
-    BecomeParentOf(toolbar);
-    BecomeParentOf(raytracerWindow);
-    BecomeParentOf(controlPanel);
-    BecomeParentOf(objectsPanel);
-    BecomeParentOf(propertiesWindow);
+    AddChild(toolbar);
+    AddChild(raytracerWindow);
+    AddChild(controlPanel);
+    AddChild(objectsPanel);
+    AddChild(propertiesWindow);
     
     SetupConnections(scene);
 }
@@ -67,4 +108,3 @@ void MainWindow::SetPluginManager(cum::Manager* manager) {
 }
 
 } // namespace ui
-

@@ -5,6 +5,10 @@
 #include "raytracer/scene.hpp"
 #include <functional>
 
+namespace hui {
+    class MouseButtonEvent;
+}
+
 namespace ui {
 
 class ObjectsPanel : public hui::Container {
@@ -19,8 +23,9 @@ public:
     void SetSelectedObject(raytracer::Object* obj);
 
 protected:
+    hui::EventResult PropagateToChildren(hui::Event& event) override;
     void Redraw() const override;
-    EventResult OnMouseDown(MouseButtonEvent& evt) override;
+    hui::EventResult OnMouseDown(hui::MouseButtonEvent& evt) override;
 
 private:
     raytracer::Scene* scene;
@@ -37,8 +42,3 @@ private:
 } // namespace ui
 
 #endif // UI_OBJECTS_PANEL_HPP
-
-
-
-
-

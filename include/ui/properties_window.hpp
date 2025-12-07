@@ -5,6 +5,16 @@
 #include "raytracer/object.hpp"
 #include <functional>
 
+namespace hui {
+    class TextEvent;
+    class KeyEvent;
+    class MouseButtonEvent;
+}
+
+namespace raytracer {
+    class Scene;  
+}
+
 namespace ui {
 
 class PropertiesWindow : public hui::Container {
@@ -23,10 +33,11 @@ public:
     void SetOnPasteRequest(std::function<void()> callback) { onPasteRequest = callback; }
 
 protected:
+    hui::EventResult PropagateToChildren(hui::Event& event) override;
     void Redraw() const override;
-    EventResult OnText(TextEvent& evt) override;
-    EventResult OnKeyDown(KeyEvent& evt) override;
-    EventResult OnMouseDown(MouseButtonEvent& evt) override;
+    hui::EventResult OnText(hui::TextEvent& evt) override;
+    hui::EventResult OnKeyDown(hui::KeyEvent& evt) override;
+    hui::EventResult OnMouseDown(hui::MouseButtonEvent& evt) override;
 
 private:
     raytracer::Object* currentObject = nullptr;
@@ -49,6 +60,3 @@ private:
 } // namespace ui
 
 #endif // UI_PROPERTIES_WINDOW_HPP
-
-
-

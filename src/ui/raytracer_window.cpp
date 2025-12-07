@@ -3,12 +3,19 @@
 #include "dr4/keycodes.hpp"
 #include <cmath>
 #include <algorithm>
+#include "hui/event.hpp"
+#include "hui/ui.hpp"
 
 namespace ui {
 
 RayTracerWindow::RayTracerWindow(hui::UI* ui, raytracer::Scene* scene_, raytracer::Camera* camera_)
     : Widget(ui), scene(scene_), camera(camera_), raytracer(nullptr) {
     SetSize(800, 600);
+}
+
+void RayTracerWindow::SetSelectedObject(const raytracer::Object* obj) {
+    selectedObject = const_cast<raytracer::Object*>(obj);
+    ForceRedraw();
 }
 
 void RayTracerWindow::Redraw() const {
@@ -20,7 +27,7 @@ void RayTracerWindow::Redraw() const {
     }
     
     if (!renderImage) {
-        renderImage = GetWindow()->CreateImage();
+        renderImage = GetUI()->GetWindow()->CreateImage();
         renderImage->SetSize(GetSize());
     }
     
@@ -47,7 +54,7 @@ void RayTracerWindow::DrawSelectionBox(dr4::Texture& texture, raytracer::Object*
     screenMin = dr4::Vec2f(min.x * 50 + GetSize().x * 0.5f, min.y * 50 + GetSize().y * 0.5f);
     screenMax = dr4::Vec2f(max.x * 50 + GetSize().x * 0.5f, max.y * 50 + GetSize().y * 0.5f);
     
-    auto* rect = GetWindow()->CreateRectangle();
+    auto* rect = GetUI()->GetWindow()->CreateRectangle();
     rect->SetPos(screenMin);
     rect->SetSize(screenMax - screenMin);
     rect->SetFillColor(dr4::Color(0, 0, 0, 0));
@@ -56,7 +63,7 @@ void RayTracerWindow::DrawSelectionBox(dr4::Texture& texture, raytracer::Object*
     texture.Draw(*rect);
 }
 
-EventResult RayTracerWindow::OnMouseDown(MouseButtonEvent& evt) {
+hui::EventResult RayTracerWindow::OnMouseDown(hui::MouseButtonEvent& evt) {
     if (evt.button == dr4::MouseButtonType::LEFT && scene && camera) {
         float screenX = evt.pos.x - GetPos().x;
         float screenY = evt.pos.y - GetPos().y;
@@ -75,7 +82,7 @@ EventResult RayTracerWindow::OnMouseDown(MouseButtonEvent& evt) {
             
             if (closestHit.hit && closestHit.object) {
                 SetSelectedObject(closestHit.object);
-                return EventResult::HANDLED;
+                return hui::EventResult::HANDLED;
             }
         }
     }
@@ -83,17 +90,17 @@ EventResult RayTracerWindow::OnMouseDown(MouseButtonEvent& evt) {
     return Widget::OnMouseDown(evt);
 }
 
-EventResult RayTracerWindow::OnKeyDown(KeyEvent& evt) {
+hui::EventResult RayTracerWindow::OnKeyDown(hui::KeyEvent& evt) {
     if (evt.key == dr4::KEYCODE_V && (evt.mods & dr4::KEYMOD_CTRL)) {
         if (onPasteRequest) {
             onPasteRequest();
         }
-        return EventResult::HANDLED;
+        return hui::EventResult::HANDLED;
     }
     return Widget::OnKeyDown(evt);
 }
 
-EventResult RayTracerWindow::OnIdle(IdleEvent& evt) {
+hui::EventResult RayTracerWindow::OnIdle(hui::IdleEvent& evt) {
     if (needsRender) {
         ForceRedraw();
     }
@@ -101,4 +108,3 @@ EventResult RayTracerWindow::OnIdle(IdleEvent& evt) {
 }
 
 } // namespace ui
-

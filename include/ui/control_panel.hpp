@@ -3,20 +3,29 @@
 
 #include "hui/container.hpp"
 #include "raytracer/camera.hpp"
+#include <functional>
+
+namespace hui {
+    class IdleEvent;
+    class KeyEvent;
+    class MouseButtonEvent;
+}
 
 namespace ui {
 
 class ControlPanel : public hui::Container {
 public:
     ControlPanel(hui::UI* ui, raytracer::Camera* camera);
-    void SetupButtons();
     
-    void SetCollapsed(bool collapsed) { isCollapsed = collapsed; ForceRedraw(); }
-    bool IsCollapsed() const { return isCollapsed; }
-
+    void UpdateFromCamera();
+    
 protected:
+    hui::EventResult PropagateToChildren(hui::Event& event) override;
     void Redraw() const override;
-    EventResult OnIdle(IdleEvent& evt) override;
+    hui::EventResult OnIdle(hui::IdleEvent& evt) override;
+    hui::EventResult OnKeyDown(hui::KeyEvent& evt) override;
+    hui::EventResult OnMouseDown(hui::MouseButtonEvent& evt) override;
+    hui::EventResult OnKeyUp(hui::KeyEvent& evt) override;
 
 private:
     raytracer::Camera* camera;
@@ -31,16 +40,18 @@ private:
     bool rotateRight = false;
     bool rotateUp = false;
     bool rotateDown = false;
-    
-    float lastTime = 0.0f;
     bool isCollapsed = false;
+    double lastTime = 0.0f;
     
-    EventResult OnKeyDown(KeyEvent& evt) override;
-    EventResult OnMouseDown(MouseButtonEvent& evt) override;
-    EventResult OnKeyUp(KeyEvent& evt) override;
+    std::string posXText, posYText, posZText;
+    std::string lookAtXText, lookAtYText, lookAtZText;
+    std::string fovText;
+    
+    int activeField = -1;
+    
+    void ParseAndApplyChanges();
 };
 
 } // namespace ui
 
 #endif // UI_CONTROL_PANEL_HPP
-

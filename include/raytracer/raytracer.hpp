@@ -36,10 +36,10 @@ public:
         }
 
         if (!closestHit.hit) {
-            return dr4::Color(20, 20, 30); // Темный фон
+            return dr4::Color(20, 20, 30); 
         }
 
-        Object* obj = closestHit.object;
+        const Object* obj = closestHit.object;
         
         if (obj->isLightSource) {
             return dr4::Color(255, 255, 255);
