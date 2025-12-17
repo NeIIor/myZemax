@@ -4,6 +4,8 @@
 #include "hui/container.hpp"
 #include "cum/manager.hpp"
 #include <vector>
+#include <algorithm>
+#include <string>
 
 namespace raytracer {
     class Scene;
@@ -18,6 +20,7 @@ namespace ui {
     class ObjectsPanel;
     class Toolbar;
     class PropertiesWindow;
+    class AddObjectDialog;
 }
 
 namespace ui {
@@ -30,11 +33,14 @@ public:
     void SetupLayout(raytracer::Scene* scene, raytracer::Camera* camera, raytracer::RayTracer* rt);
     void SetupConnections(raytracer::Scene* scene);
     void SetPluginManager(cum::Manager* manager);
+    void SetPluginsDirectory(std::string dir);
     
     PropertiesWindow* GetPropertiesWindow();
 
 protected:
     hui::EventResult PropagateToChildren(hui::Event& event) override;
+    void Redraw() const override;
+    hui::EventResult OnIdle(hui::IdleEvent& evt) override;
 
 private:
     RayTracerWindow* raytracerWindow;
@@ -42,10 +48,21 @@ private:
     ObjectsPanel* objectsPanel;
     PropertiesWindow* propertiesWindow;
     Toolbar* toolbar;
+    cum::Manager* pluginManager = nullptr;
+    class DrawOverlay* drawOverlay = nullptr;
+    AddObjectDialog* addObjectDialog = nullptr;
+    std::string pluginsDir;
+
+    
+    
+    hui::Widget* mouseCapture = nullptr;
     
     std::vector<hui::Widget*> children;
+    bool drawMode = false;
     
     void AddChild(hui::Widget* child);
+    void BringToFront(hui::Widget* child);
+    void ToggleDrawMode();
 };
 
 } // namespace ui

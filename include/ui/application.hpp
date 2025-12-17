@@ -7,18 +7,23 @@
 #include "raytracer/scene.hpp"
 #include "raytracer/camera.hpp"
 #include "raytracer/raytracer.hpp"
+#include <string>
 
 namespace ui {
+
+class MainWindow;
 
 class Application {
 public:
     dr4::Window* window;
     hui::UI* ui;
     cum::Manager* pluginManager;
+    MainWindow* mainWindow;
     
     raytracer::Scene scene;
     raytracer::Camera camera;
     raytracer::RayTracer* raytracer;
+    std::string pluginsDir;
 
     Application();
     ~Application();
@@ -29,7 +34,7 @@ public:
     void Render();
     
 private:
-    void LoadPlugins(); // Загрузка плагинов из папки plugins/
+    void LoadPlugins();
 };
 
 } // namespace ui
